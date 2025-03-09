@@ -4,7 +4,7 @@ The Hack Computer Platform. It includes an assembler, virtual machine and a comp
 
 ## Installation
 
-Install with `npm` directly from the GitHub repository. Now 3 binaries in total will be available on your `PATH`, once for each program.
+Install with `npm` directly from the GitHub repository. Now 3 binaries in total will be available on your `PATH`, one for each program.
 
 ```bash
 npm install -g git://github.com/jonathantorres/hack
