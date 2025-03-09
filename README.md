@@ -1,17 +1,39 @@
 # hack
+
 The Hack Computer Platform. It includes an assembler, virtual machine and a compiler.
 
+## Installation
+
+Install with `npm` directly from the GitHub repository. Now 3 binaries in total will be available on your `PATH`, once for each program.
+
+```bash
+npm install -g git://github.com/jonathantorres/hack
+```
+
 ## Requirements
+
 At least Node.js 18 is required.
 
 ## Running the Assembler
-TODO
+
+Run the binary with `asm` and specify the assembly file(s) that you would like to assemble.
+
+```bash
+asm <path to .asm file>
+```
 
 ## Running the Virtual Machine Translator
-TODO
+
+Run the binary with `vm` and specify the virtual machine file(s) that you would like to assemble.
+
+```bash
+vm <path to .vm file>
+```
 
 ## Running the Compiler
+
 TODO
 
 ## License
+
 MIT
