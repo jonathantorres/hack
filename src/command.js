@@ -5,6 +5,7 @@ export const CommandType = {
     LABEL: Symbol('label'),
     GOTO: Symbol('goto'),
     IF: Symbol('if'),
+    IFGOTO: Symbol('if-goto'),
     FUNCTION: Symbol('function'),
     RETURN: Symbol('return'),
     CALL: Symbol('call'),
@@ -18,7 +19,14 @@ export class VMCommand {
     #rawCommand = '';
 
     constructor(command) {
-        this.#rawCommand = command;
+        // remove any comments from the command
+        let rawCommand = command;
+        let commentIndex = rawCommand.indexOf('//', 0);
+
+        if (commentIndex !== -1) {
+            rawCommand = rawCommand.substring(0, commentIndex).trim();
+        }
+        this.#rawCommand = rawCommand;
 
         this.#parse();
     }
@@ -71,6 +79,9 @@ export class VMCommand {
                 break;
             case 'if':
                 this.#type = CommandType.IF;
+                break;
+            case 'if-goto':
+                this.#type = CommandType.IFGOTO;
                 break;
             case 'function':
                 this.#type = CommandType.FUNCTION;

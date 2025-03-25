@@ -5,19 +5,94 @@ import { VMCommand } from './command.js';
 import { CodeGen } from './generator.js';
 
 export class VirtualMachine {
-    #files = [];
+    #locations = [];
+    #functionCallMap = null;
 
-    constructor(files) {
-        this.#files = files;
+    constructor(locations) {
+        this.#locations = locations;
+        this.#functionCallMap = new Map();
     }
 
-    translate() {
-        if (this.#files.length === 0) {
-            throw new Error('No files to translate');
+    async translate() {
+        // no path/location provided, use the current directory
+        if (this.#locations.length === 0) {
+            this.#locations.push(process.cwd());
         }
 
-        for (const file of this.#files) {
-            this.#translateFile(file);
+        for (const location of this.#locations) {
+            const currentPath = path.parse(location);
+
+            // location is just a single file
+            if (currentPath.ext) {
+                this.#translateAndSaveFile(location);
+                continue;
+            }
+
+            // location is a directory of VM files
+            let vmFiles = [];
+            let asmFileName = currentPath.base;
+
+            // open directory and get all of the VM files
+            try {
+                const files = await fs.readdir(location);
+
+                for (const file of files) {
+                    const currentFilePath = path.parse(file);
+
+                    if (currentFilePath.ext === '.vm') {
+                        vmFiles.push(file);
+                    }
+                }
+            } catch (err) {
+                throw new Error(`${e.message}`);
+            }
+
+            if (vmFiles.length === 0) {
+                throw new Error(`No VM files to translate in ${location}`);
+            }
+
+            let program = this.#genBootstrap();
+            let progLocation = location;
+
+            // make sure program location ends with /
+            if (!progLocation.endsWith('/')) {
+                progLocation += '/';
+            }
+
+            for (const file of vmFiles) {
+                const translated = await this.#translateFile(
+                    progLocation + file
+                );
+
+                for (const inst of translated) {
+                    program.push(inst);
+                }
+            }
+
+            // export final program
+            const progPath = progLocation + asmFileName + '.asm';
+            try {
+                const handle = await fs.open(progPath, 'w+');
+                await fs.writeFile(handle, program.join('\n'));
+            } catch (e) {
+                throw new Error(`${e.message}`);
+            }
+        }
+    }
+
+    async #translateAndSaveFile(filePath) {
+        const program = await this.#translateFile(filePath);
+
+        // create destination file with instructions
+        const fileElements = path.parse(filePath);
+        const destFilePath =
+            fileElements.dir + '/' + fileElements.name + '.asm';
+
+        try {
+            const handle = await fs.open(destFilePath, 'w+');
+            await fs.writeFile(handle, program.join('\n'));
+        } catch (e) {
+            throw new Error(`${e.message}`);
         }
     }
 
@@ -70,7 +145,11 @@ export class VirtualMachine {
                 const vmCmd = new VMCommand(command);
 
                 // The code generator gets the VM Command Object
-                const gen = new CodeGen(fileElements.name, vmCmd);
+                const gen = new CodeGen(
+                    fileElements.name,
+                    vmCmd,
+                    this.#functionCallMap
+                );
 
                 // and return an array of assembly instructions
                 const instructions = gen.emit();
@@ -84,15 +163,21 @@ export class VirtualMachine {
             }
         }
 
-        // create destination file with instructions
-        const destFilePath =
-            fileElements.dir + '/' + fileElements.name + '.asm';
+        return program;
+    }
+    #genBootstrap() {
+        // bootstrapping code initializes the stack and calls Sys.init
+        // SP = 256
+        const instructions = ['@256', 'D=A', '@0', 'M=D'];
 
-        try {
-            const handle = await fs.open(destFilePath, 'w+');
-            await fs.writeFile(handle, program.join('\n'));
-        } catch (e) {
-            throw new Error(`${e.message}`);
+        // call Sys.init 0
+        const vmCmd = new VMCommand('call Sys.init 0');
+        const gen = new CodeGen('', vmCmd, this.#functionCallMap);
+        const initInstructions = gen.emit();
+
+        for (const inst of initInstructions) {
+            instructions.push(inst);
         }
+        return instructions;
     }
 }
