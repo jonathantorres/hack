@@ -24,15 +24,19 @@ asm <path to .asm file>
 
 ## Running the Virtual Machine Translator
 
-Run the binary with `vm` and specify the virtual machine file(s) that you would like to assemble.
+Run the binary with `vm` and specify the virtual machine file(s) that you would like to translate.
 
 ```bash
 vm <path to .vm file>
 ```
 
-## Running the Compiler
+## Running the Jack Compiler
 
-TODO
+Run the binary with `jack` and specify the Jack file(s) that you would like to compile.
+
+```bash
+jack <path to .jack file>
+```
 
 ## License
 
